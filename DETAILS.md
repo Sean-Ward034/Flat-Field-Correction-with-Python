@@ -111,23 +111,23 @@ To summarize, the entire correction can be expressed with the following formula 
 
 1. **Dark Field Correction**:
    
-   $$
+   $
    R' = R - D
-   $$
+   $
 
 2. **Flat Field Correction**:
    
-   $$
+   $
    F' = F - D
-   $$
+   $
    
-   $$
+   $
    G = rac{	ext{mean}(F')}{F'}
-   $$
+   $
    
-   $$
+   $
    C = R' 	imes G
-   $$
+   $
 
 3. **Normalization**:
    
