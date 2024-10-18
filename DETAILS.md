@@ -1,4 +1,3 @@
-
 # Algorithms and Formulas in Flat Field Correction Tool
 
 ## Overview
@@ -44,7 +43,7 @@ F' = F - D
 $$
 
 $$
-m = 	ext{mean}(F')
+m = \text{mean}(F')
 $$
 
 Where:
@@ -61,13 +60,13 @@ The concept here is to account for illumination inconsistencies by adjusting for
 Using the mean value **m** and the flat field image minus the dark field (**F'**), we calculate a gain matrix **G** to adjust the raw image. The gain matrix is calculated as follows:
 
 $$
-G = rac{m}{F'}
+G = \frac{m}{F'}
 $$
 
 The gain matrix **G** is used to scale the dark-field corrected raw image **R'** to account for uneven illumination. The corrected image **C** is computed as:
 
 $$
-C = R' 	imes G
+C = R' \times G
 $$
 
 Where:
@@ -80,7 +79,7 @@ To handle any divisions by zero, the flat field difference (**F'**) is adjusted 
 After applying the gain matrix, the image **C** is normalized to a range suitable for visualization. The normalization is performed as follows:
 
 $$
-C = rac{C - C_{\min}}{C_{\max} - C_{\min}}
+C = \frac{C - C_{\min}}{C_{\max} - C_{\min}}
 $$
 
 This step ensures that all pixel values are scaled between **0** and **1**, which are then multiplied by **255** to convert them to an 8-bit grayscale image for display purposes.
@@ -105,7 +104,6 @@ The steps for synthetic flat field generation are:
 3. Apply a Gaussian filter with a specified **sigma** value (e.g., **5**) to achieve a smooth result.
 
 These steps replicate the effects of an evenly illuminated scene with minor imperfections, which is crucial for accurate correction as described in the [Wikipedia article](https://en.wikipedia.org/wiki/Flat-field_correction).
-
 
 ## Conclusion
 The flat field correction process effectively minimizes artifacts and inconsistencies in an image caused by uneven illumination and sensor noise. By leveraging dark and flat field images, the algorithm corrects the raw image to produce a result that accurately represents the scene.
