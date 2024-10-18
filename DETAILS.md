@@ -106,34 +106,6 @@ The steps for synthetic flat field generation are:
 
 These steps replicate the effects of an evenly illuminated scene with minor imperfections, which is crucial for accurate correction as described in the [Wikipedia article](https://en.wikipedia.org/wiki/Flat-field_correction).
 
-## Mathematical Summary
-To summarize, the entire correction can be expressed with the following formula sequence:
-
-1. **Dark Field Correction**:
-   
-   $
-   R' = R - D
-   $
-
-2. **Flat Field Correction**:
-   
-   $
-   F' = F - D
-   $
-   
-   $
-   G = rac{	ext{mean}(F')}{F'}
-   $
-   
-   $
-   C = R' 	imes G
-   $
-
-3. **Normalization**:
-   
-   $$
-   C = rac{C - C_{\min}}{C_{\max} - C_{\min}} 	imes 255
-   $$
 
 ## Conclusion
 The flat field correction process effectively minimizes artifacts and inconsistencies in an image caused by uneven illumination and sensor noise. By leveraging dark and flat field images, the algorithm corrects the raw image to produce a result that accurately represents the scene.
