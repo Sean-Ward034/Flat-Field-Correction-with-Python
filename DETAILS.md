@@ -21,9 +21,9 @@ Each of these steps involves specific mathematical operations to ensure that art
 ### 1. Dark Field Subtraction
 **Dark Field Image (D)** represents the sensor's response in the absence of light. The purpose of subtracting the dark field image is to eliminate noise introduced by the sensor itself (such as thermal noise or read noise). The formula for this step is:
 
-\[
+$$
 R' = R - D
-\]
+$$
 
 Where:
 - **R**: Raw image
@@ -39,13 +39,13 @@ This operation is similar to the technique described in the [Flat-Field Correcti
 
 The gain factor (G) is computed by using the average value of the flat field image minus the dark field:
 
-\[
+$$
 F' = F - D
-\]
+$$
 
-\[
+$$
 m = 	ext{mean}(F')
-\]
+$$
 
 Where:
 - **F**: Flat field image
@@ -60,15 +60,15 @@ The concept here is to account for illumination inconsistencies by adjusting for
 ### 3. Gain Adjustment and Final Correction
 Using the mean value **m** and the flat field image minus the dark field (**F'**), we calculate a gain matrix **G** to adjust the raw image. The gain matrix is calculated as follows:
 
-\[
+$$
 G = rac{m}{F'}
-\]
+$$
 
 The gain matrix **G** is used to scale the dark-field corrected raw image **R'** to account for uneven illumination. The corrected image **C** is computed as:
 
-\[
+$$
 C = R' 	imes G
-\]
+$$
 
 Where:
 - **G**: Gain matrix calculated using the mean and the flat field image
@@ -79,9 +79,9 @@ To handle any divisions by zero, the flat field difference (**F'**) is adjusted 
 
 After applying the gain matrix, the image **C** is normalized to a range suitable for visualization. The normalization is performed as follows:
 
-\[
+$$
 C = rac{C - C_{\min}}{C_{\max} - C_{\min}}
-\]
+$$
 
 This step ensures that all pixel values are scaled between **0** and **1**, which are then multiplied by **255** to convert them to an 8-bit grayscale image for display purposes.
 
@@ -111,29 +111,29 @@ To summarize, the entire correction can be expressed with the following formula 
 
 1. **Dark Field Correction**:
    
-   \[
+   $$
    R' = R - D
-   \]
+   $$
 
 2. **Flat Field Correction**:
    
-   \[
+   $$
    F' = F - D
-   \]
+   $$
    
-   \[
+   $$
    G = rac{	ext{mean}(F')}{F'}
-   \]
+   $$
    
-   \[
+   $$
    C = R' 	imes G
-   \]
+   $$
 
 3. **Normalization**:
    
-   \[
+   $$
    C = rac{C - C_{\min}}{C_{\max} - C_{\min}} 	imes 255
-   \]
+   $$
 
 ## Conclusion
 The flat field correction process effectively minimizes artifacts and inconsistencies in an image caused by uneven illumination and sensor noise. By leveraging dark and flat field images, the algorithm corrects the raw image to produce a result that accurately represents the scene.
