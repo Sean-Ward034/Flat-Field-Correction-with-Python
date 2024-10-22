@@ -12,6 +12,7 @@ class FlatFieldCorrectionApp:
         master.geometry("1400x800")  # Set window size
 
         # Initialize images and zoom scale
+        self.raw_image_original = None
         self.raw_image = None
         self.dark_image = None
         self.flat_image = None
@@ -86,6 +87,14 @@ class FlatFieldCorrectionApp:
         tk.Label(self.image_frame, text="Dark Field (D)").grid(row=1, column=1)
         tk.Label(self.image_frame, text="Flat Field (F)").grid(row=1, column=2)
         tk.Label(self.image_frame, text="Corrected Image (C)").grid(row=1, column=3)
+        
+        # Example Slider for Sigma Adjustment
+        self.sigma_label = tk.Label(self.controls_frame, text="Gaussian Sigma:")
+        self.sigma_label.grid(row=3, column=0, padx=5, pady=5)
+        self.sigma_scale = tk.Scale(self.controls_frame, from_=0.5, to=5.0, resolution=0.1, orient='horizontal')
+        self.sigma_scale.set(1.0)
+        self.sigma_scale.grid(row=3, column=1, padx=5, pady=5)
+
 
     def load_raw_image(self):
         # Load the raw image from the user's file system
@@ -93,10 +102,19 @@ class FlatFieldCorrectionApp:
         if file_path:
             try:
                 # Open the image and convert to floating-point format
-                self.raw_image_original = Image.open(file_path).convert('F')
+                raw_image_pil = Image.open(file_path).convert('F')
+                raw_array = np.array(raw_image_pil)
+
+                sigma = self.sigma_scale.get()
+                smoothed_raw = gaussian_filter(raw_array, sigma=sigma)
+
+                # Convert back to PIL Image
+                self.raw_image_original = Image.fromarray(smoothed_raw.astype('float32'))
                 self.raw_image = self.raw_image_original.copy()
+
                 self.display_image(self.raw_image_original, self.canvas_R)
-                messagebox.showinfo("Image Loaded", "Raw image loaded successfully.")
+                messagebox.showinfo("Image Loaded", "Raw image loaded and smoothed successfully.")
+
                 # Enable buttons for further processing
                 self.correct_button.config(state='normal')
                 self.zoom_in_button.config(state='normal')
@@ -110,9 +128,17 @@ class FlatFieldCorrectionApp:
         if file_path:
             try:
                 # Open the image and convert to floating-point format
-                self.dark_image = Image.open(file_path).convert('F')
+                dark_image_pil = Image.open(file_path).convert('F')
+                dark_array = np.array(dark_image_pil)
+
+                # Apply Gaussian smoothing
+                sigma = self.sigma_scale.get()
+                smoothed_dark = gaussian_filter(dark_array, sigma=sigma)
+
+                # Convert back to PIL Image
+                self.dark_image = Image.fromarray(smoothed_dark.astype('float32'))
                 self.display_image(self.dark_image, self.canvas_D)
-                messagebox.showinfo("Image Loaded", "Dark field image loaded successfully.")
+                messagebox.showinfo("Image Loaded", "Dark field image loaded and smoothed successfully.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load dark field image:\n{e}")
 
@@ -122,9 +148,16 @@ class FlatFieldCorrectionApp:
         if file_path:
             try:
                 # Open the image and convert to floating-point format
-                self.flat_image = Image.open(file_path).convert('F')
+                flat_image_pil = Image.open(file_path).convert('F')
+                flat_array = np.array(flat_image_pil)
+
+                sigma = self.sigma_scale.get()
+                smoothed_flat = gaussian_filter(flat_array, sigma=sigma)
+
+                # Convert back to PIL Image
+                self.flat_image = Image.fromarray(smoothed_flat.astype('float32'))
                 self.display_image(self.flat_image, self.canvas_F)
-                messagebox.showinfo("Image Loaded", "Flat field image loaded successfully.")
+                messagebox.showinfo("Image Loaded", "Flat field image loaded and smoothed successfully.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load flat field image:\n{e}")
 
@@ -140,9 +173,15 @@ class FlatFieldCorrectionApp:
             # Generate Dark Field (D) by dimming the raw image
             raw_image_L = self.raw_image_original.convert('L')
             enhancer = ImageEnhance.Brightness(raw_image_L)
-            dark_image_L = enhancer.enhance(0.25)  # Reduce brightness to simulate a dark field (reduced by 75%)
-            self.dark_image = dark_image_L.convert('F')
-            self.display_image(dark_image_L, self.canvas_D)
+            dark_image_L = enhancer.enhance(0.2)  # Reduce brightness to simulate a dark field (reduced by 80%)
+            dark_array = np.array(dark_image_L)
+
+            # Apply Gaussian smoothing to dark field
+            sigma = self.sigma_scale.get()
+            smoothed_dark = gaussian_filter(dark_array, sigma=sigma)
+
+            self.dark_image = Image.fromarray(smoothed_dark.astype('float32'))
+            self.display_image(self.dark_image, self.canvas_D)
 
             # Generate Flat Field (F) by creating a uniform image with noise
             flat_brightness_value = 255  # Desired brightness level
@@ -150,11 +189,14 @@ class FlatFieldCorrectionApp:
             noise = np.random.normal(0, 5, flat_array.shape)  # Add Gaussian noise
             flat_array = flat_array + noise
             flat_array = np.clip(flat_array, 0, 255)  # Clip values to valid range
-            flat_array_smoothed = gaussian_filter(flat_array, sigma=5)  # Smooth with Gaussian filter
+
+            # Apply Gaussian smoothing to flat field
+            sigma = 5  # Standard deviation for Gaussian kernel
+            flat_array_smoothed = gaussian_filter(flat_array, sigma=sigma)
 
             self.flat_image = Image.fromarray(flat_array_smoothed.astype('float32'))
             self.display_image(self.flat_image, self.canvas_F)
-            messagebox.showinfo("Generated", "Dark and Flat field images generated successfully.")
+            messagebox.showinfo("Generated", "Dark and Flat field images generated and smoothed successfully.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate dark and flat fields:\n{e}")
         finally:
@@ -184,23 +226,28 @@ class FlatFieldCorrectionApp:
             # Perform flat field correction calculation
             F_minus_D = F - D
             m = np.mean(F_minus_D)  # Mean of (F - D)
+            epsilon = 1e-6  # Small constant to avoid division by zero
             denominator = F_minus_D.copy()
-            denominator[denominator == 0] = np.nan  # Avoid division by zero by using NaN
+            denominator[denominator == 0] = epsilon  # Prevent division by zero
+
             G = m / denominator  # Calculate gain
             R_minus_D = R - D  # Subtract dark field from raw image
             C = R_minus_D * G  # Apply gain to corrected image
 
-            # Handle NaN and infinity values in the corrected image
+            # Handle any potential NaN or infinite values
             C = np.nan_to_num(C, nan=0.0, posinf=0.0, neginf=0.0)
 
             # Normalize corrected image to 8-bit format for display
-            C = C - np.nanmin(C)
-            if np.nanmax(C) != 0:
-                C = C / np.nanmax(C)
-            C = (C * 255).astype('uint8')
+            C_min = C.min()
+            C_max = C.max()
+            if C_max > C_min:
+                C_normalized = (C - C_min) / (C_max - C_min)
+            else:
+                C_normalized = C - C_min  # Avoid division by zero if all values are the same
+            C_normalized = (C_normalized * 255).astype('uint8')
 
             # Convert corrected image to PIL format and display
-            self.corrected_image = Image.fromarray(C)
+            self.corrected_image = Image.fromarray(C_normalized)
             self.display_image(self.corrected_image, self.canvas_C)
             messagebox.showinfo("Correction Complete", "Flat field correction performed successfully.")
             self.save_button.config(state='normal')  # Enable save button
@@ -227,7 +274,10 @@ class FlatFieldCorrectionApp:
         canvas_width = int(canvas['width'])
         canvas_height = int(canvas['height'])
         image = image.copy()
-        image.thumbnail((canvas_width, canvas_height))  # Resize to fit canvas while maintaining aspect ratio
+        
+        # Use the updated Resampling class in Pillow for resizing
+        image.thumbnail((canvas_width, canvas_height), Image.Resampling.LANCZOS)  # Replace ANTIALIAS with LANCZOS
+        
         photo = ImageTk.PhotoImage(image.convert('L'))
         canvas.image = photo  # Keep reference to avoid garbage collection
         canvas.delete("all")  # Clear previous image
